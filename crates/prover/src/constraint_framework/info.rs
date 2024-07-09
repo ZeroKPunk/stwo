@@ -7,7 +7,7 @@ use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::TreeVec;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct InfoEvaluator {
     pub mask_offsets: TreeVec<Vec<Vec<isize>>>,
     pub n_constraints: usize,

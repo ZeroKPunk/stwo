@@ -56,23 +56,30 @@ impl<'a> EvalAtRow for DomainEvaluator<'a> {
         interaction: usize,
         offsets: [isize; N],
     ) -> [Self::F; N] {
-        let col_index = self.col_index[interaction];
-        self.col_index[interaction] += 1;
-        offsets.map(|off| {
-            // TODO(spapini): Optimize.
-            if off == 0 {
-                return self.trace_eval[interaction][col_index].data[self.vec_row];
-            }
-            PackedBaseField::from_array(std::array::from_fn(|i| {
-                let index = offset_bit_reversed_circle_domain_index(
-                    (self.vec_row << LOG_N_LANES) + i,
-                    self.domain_log_size,
-                    self.eval_log_size,
-                    off,
-                );
-                self.trace_eval[interaction][col_index].at(index)
-            }))
-        })
+        unsafe {
+            let col_index = *self.col_index.get_unchecked(interaction);
+            *self.col_index.get_unchecked_mut(interaction) += 1;
+            offsets.map(|off| {
+                // TODO(spapini): Optimize.
+                if off == 0 {
+                    return *self
+                        .trace_eval
+                        .get_unchecked(interaction)
+                        .get_unchecked(col_index)
+                        .data
+                        .get_unchecked(self.vec_row);
+                }
+                PackedBaseField::from_array(std::array::from_fn(|i| {
+                    let index = offset_bit_reversed_circle_domain_index(
+                        (self.vec_row << LOG_N_LANES) + i,
+                        self.domain_log_size,
+                        self.eval_log_size,
+                        off,
+                    );
+                    self.trace_eval[interaction][col_index].at(index)
+                }))
+            })
+        }
     }
     fn add_constraint<G>(&mut self, constraint: G)
     where

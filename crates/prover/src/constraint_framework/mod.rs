@@ -41,6 +41,8 @@ pub trait EvalAtRow {
         + Copy
         + Debug
         + Zero
+        + From<Self::F>
+        + From<SecureField>
         + Neg<Output = Self::EF>
         + Add<SecureField, Output = Self::EF>
         + Sub<SecureField, Output = Self::EF>

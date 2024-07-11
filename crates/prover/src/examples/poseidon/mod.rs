@@ -252,7 +252,7 @@ struct PoseidonEval<'a, E: EvalAtRow> {
 impl<'a, E: EvalAtRow> PoseidonEval<'a, E> {
     fn eval(mut self) -> E {
         for _ in 0..N_INSTANCES_PER_ROW {
-            let mut state: [_; N_STATE] = std::array::from_fn(|_| self.eval.next_mask());
+            let mut state: [_; N_STATE] = std::array::from_fn(|_| self.eval.next_trace_mask());
 
             // Require state lookup.
             self.logup
@@ -266,7 +266,7 @@ impl<'a, E: EvalAtRow> PoseidonEval<'a, E> {
                 apply_external_round_matrix(&mut state);
                 state = std::array::from_fn(|i| pow5(state[i]));
                 state.iter_mut().for_each(|s| {
-                    let m = self.eval.next_mask();
+                    let m = self.eval.next_trace_mask();
                     self.eval.add_constraint(*s - m);
                     *s = m;
                 });
@@ -277,7 +277,7 @@ impl<'a, E: EvalAtRow> PoseidonEval<'a, E> {
                 state[0] += INTERNAL_ROUND_CONSTS[round];
                 apply_internal_round_matrix(&mut state);
                 state[0] = pow5(state[0]);
-                let m = self.eval.next_mask();
+                let m = self.eval.next_trace_mask();
                 self.eval.add_constraint(state[0] - m);
                 state[0] = m;
             });
@@ -290,7 +290,7 @@ impl<'a, E: EvalAtRow> PoseidonEval<'a, E> {
                 apply_external_round_matrix(&mut state);
                 state = std::array::from_fn(|i| pow5(state[i]));
                 state.iter_mut().for_each(|s| {
-                    let m = self.eval.next_mask();
+                    let m = self.eval.next_trace_mask();
                     self.eval.add_constraint(*s - m);
                     *s = m;
                 });

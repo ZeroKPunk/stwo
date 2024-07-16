@@ -11,7 +11,7 @@ use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::secure_column::SecureColumn;
 use crate::core::fields::FieldOps;
-use crate::core::poly::circle::{CanonicCoset, CircleEvaluation, CirclePoly, SecureCirclePoly};
+use crate::core::poly::circle::{CanonicCoset, CircleEvaluation, SecureCirclePoly};
 use crate::core::poly::BitReversedOrder;
 use crate::core::utils::generate_secure_powers;
 
@@ -116,29 +116,39 @@ impl<B: Backend> DomainEvaluationAccumulator<B> {
             "not all random coefficients were used"
         );
         let _span = span!(Level::INFO, "Constraints interpolation").entered();
-        let mut res_coeffs = SecureColumn::<B>::zeros(1 << self.log_size());
-        let res_log_size = self.log_size();
+        let mut cur_poly: Option<SecureCirclePoly<B>> = None;
+        let twiddles = B::precompute_twiddles(
+            CanonicCoset::new(self.log_size())
+                .circle_domain()
+                .half_coset,
+        );
 
         for (log_size, values) in self.sub_accumulations.into_iter().enumerate().skip(1) {
-            let Some(values) = values else {
+            let Some(mut values) = values else {
                 continue;
             };
-            let coeffs = SecureColumn::<B> {
-                columns: values.columns.map(|c| {
-                    CircleEvaluation::<B, BaseField, BitReversedOrder>::new(
-                        CanonicCoset::new(log_size as u32).circle_domain(),
-                        c,
-                    )
-                    .interpolate()
-                    .extend(res_log_size)
-                    .coeffs
-                }),
-            };
-            // Add column coefficients into result coefficients, element-wise, in-place.
-            B::accumulate(&mut res_coeffs, &coeffs);
+            println!("subaccum log_size: {}", log_size);
+            if let Some(prev_poly) = cur_poly {
+                let eval = SecureColumn {
+                    columns: prev_poly.0.map(|c| {
+                        c.evaluate_with_twiddles(
+                            CanonicCoset::new(log_size as u32).circle_domain(),
+                            &twiddles,
+                        )
+                        .values
+                    }),
+                };
+                B::accumulate(&mut values, &eval);
+            }
+            cur_poly = Some(SecureCirclePoly(values.columns.map(|c| {
+                CircleEvaluation::<B, BaseField, BitReversedOrder>::new(
+                    CanonicCoset::new(log_size as u32).circle_domain(),
+                    c,
+                )
+                .interpolate_with_twiddles(&twiddles)
+            })));
         }
-
-        SecureCirclePoly(res_coeffs.columns.map(CirclePoly::new))
+        cur_poly.unwrap()
     }
 }
 

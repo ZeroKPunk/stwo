@@ -62,12 +62,13 @@ impl<'a> EvalAtRow for DomainEvaluator<'a> {
             offsets.map(|off| {
                 // TODO(spapini): Optimize.
                 if off == 0 {
-                    return *self
-                        .trace_eval
-                        .get_unchecked(interaction)
-                        .get_unchecked(col_index)
-                        .data
-                        .get_unchecked(self.vec_row);
+                    // return *self
+                    //     .trace_eval
+                    //     .get_unchecked(interaction)
+                    //     .get_unchecked(col_index)
+                    //     .data
+                    //     .get_unchecked(self.vec_row);
+                    return self.trace_eval[interaction][col_index].data[self.vec_row];
                 }
                 PackedBaseField::from_array(std::array::from_fn(|i| {
                     let index = offset_bit_reversed_circle_domain_index(

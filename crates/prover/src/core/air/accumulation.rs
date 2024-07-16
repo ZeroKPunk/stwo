@@ -127,7 +127,6 @@ impl<B: Backend> DomainEvaluationAccumulator<B> {
             let Some(mut values) = values else {
                 continue;
             };
-            println!("subaccum log_size: {}", log_size);
             if let Some(prev_poly) = cur_poly {
                 let eval = SecureColumn {
                     columns: prev_poly.0.map(|c| {

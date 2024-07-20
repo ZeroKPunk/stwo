@@ -13,7 +13,7 @@ pub use assert::{assert_constraints, AssertEvaluator};
 pub use info::InfoEvaluator;
 use num_traits::{One, Zero};
 pub use point::PointEvaluator;
-pub use simd_domain::SimdDomainEvaluator;
+pub use simd_domain::{DomainEvalHelper, SimdDomainEvaluator};
 
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
@@ -29,6 +29,8 @@ pub trait EvalAtRow {
     type F: FieldExpOps
         + Copy
         + Debug
+        + Zero
+        + Neg<Output = Self::F>
         + AddAssign<Self::F>
         + AddAssign<BaseField>
         + Add<Self::F, Output = Self::F>
@@ -44,6 +46,7 @@ pub trait EvalAtRow {
         + Copy
         + Debug
         + Zero
+        + From<Self::F>
         + Neg<Output = Self::EF>
         + Add<SecureField, Output = Self::EF>
         + Sub<SecureField, Output = Self::EF>
@@ -51,7 +54,8 @@ pub trait EvalAtRow {
         + Add<Self::F, Output = Self::EF>
         + Mul<Self::F, Output = Self::EF>
         + Sub<Self::EF, Output = Self::EF>
-        + Mul<Self::EF, Output = Self::EF>;
+        + Mul<Self::EF, Output = Self::EF>
+        + From<SecureField>;
 
     /// Returns the next mask value for the first interaction at offset 0.
     fn next_trace_mask(&mut self) -> Self::F {
